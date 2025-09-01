@@ -114,9 +114,9 @@ static const uint16_t RESULT__OSC_CALIBRATE_VAL                                 
 static const uint16_t FIRMWARE__SYSTEM_STATUS                                             = 0x00E5;
 static const uint16_t IDENTIFICATION__MODEL_ID                                            = 0x010F;
 
-static const uint16_t BOOT_TIMEOUT     = 120;  // Restored original timeout - I2C issues were the real problem
-static const uint16_t TIMING_BUDGET    = 140;                           
-static const uint16_t RANGING_FINISHED = (TIMING_BUDGET * 110) / 100;  // add 10% extra to timing budget to ensure ranging is finished
+static const uint16_t BOOT_TIMEOUT     = 120;
+static const uint16_t TIMING_BUDGET    = 500;                          // timing budget is maximum allowable = 500 ms
+static const uint16_t RANGING_FINISHED = (TIMING_BUDGET * 115) / 100;  // add 15% extra to timing budget to ensure ranging is finished
 
 // Sensor Initialisation
 void VL53L1XComponent::setup() {
@@ -402,7 +402,6 @@ bool VL53L1XComponent::get_sensor_id(bool* valid_sensor) {
   return true;
 }
 
-
 bool VL53L1XComponent::set_distance_mode(DistanceMode distance_mode) {
   uint16_t timing_budget;
   if (!this->get_timing_budget(&timing_budget)) {
@@ -617,13 +616,13 @@ bool VL53L1XComponent::stop_continuous() {
 bool VL53L1XComponent::start_oneshot() {
   // clear interrupt trigger
   if (!this->vl53l1x_write_byte(SYSTEM__INTERRUPT_CLEAR, 0x01))  {
-    ESP_LOGE(TAG, "Error writing clear interrupt when starting one-shot ranging");
+    ESP_LOGE(TAG, "  Error writing clear interrupt when starting one-shot ranging");
     return false;
   }
 
   // enable one-shot ranging
   if (!this->vl53l1x_write_byte(SYSTEM__MODE_START, 0x10)) {
-    ESP_LOGE(TAG, "Error writing start one-shot ranging");
+    ESP_LOGE(TAG, "  Error writing start one-shot ranging");
     return false;
   }
 
@@ -634,14 +633,12 @@ bool VL53L1XComponent::start_oneshot() {
 bool VL53L1XComponent::check_for_dataready(bool *is_dataready) {
   uint8_t temp;
   if (!this->vl53l1x_read_byte(GPIO__TIO_HV_STATUS, &temp)) {
-    ESP_LOGE(TAG, "Error reading data ready register");
+    ESP_LOGE(TAG, "  Error reading data ready");
     *is_dataready = false;
-    this->ranging_active_ = false;
     return false;
   }
-  
-  // Data ready when bit 0 is set
-  *is_dataready = ((temp & 0x01) == 1);
+  // assumes interrupt is active low (GPIO_HV_MUX__CTRL bit 4 is 1)
+  *is_dataready = ((temp & 0x01) == 0);
   return true;
 }
 
@@ -959,7 +956,6 @@ bool VL53L1XComponent::vl53l1x_read_bytes_16(uint16_t a_register, uint16_t *data
 bool VL53L1XComponent::vl53l1x_read_byte_16(uint16_t a_register, uint16_t *data) {
   return this->vl53l1x_read_bytes_16(a_register, data, 1);
 }
-
 
 } // namespace VL53L1X
 } // namespace esphome
