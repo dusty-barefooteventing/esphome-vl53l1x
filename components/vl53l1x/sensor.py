@@ -9,7 +9,6 @@ from esphome.const import (
     STATE_CLASS_MEASUREMENT,
     UNIT_MILLIMETER,
 )
-from esphome import pins
 
 CODEOWNERS = ["@mrtoy-me"]
 DEPENDENCIES = ["i2c"]
@@ -29,12 +28,11 @@ DISTANCE_MODES = {
 
 CONF_DISTANCE_MODE = "distance_mode"
 CONF_RANGE_STATUS = "range_status"
-CONF_XSHUT_PIN = "xshut_pin"
 
 def validate_update_interval(config):
-    if config[CONF_UPDATE_INTERVAL].total_milliseconds < 140:
+    if config[CONF_UPDATE_INTERVAL].total_milliseconds < 250:
         raise cv.Invalid(
-            f"VL53L1X update_interval must be 140 millisecond or greater for reliable 4m measurements in LONG mode. Increase update_interval to >= 140 ms"
+            f"VL53L1X update_interval must be 1 second or greater. Increase update_interval to >= 0.25 second"
         )
     return config
 
@@ -55,7 +53,6 @@ CONFIG_SCHEMA = cv.All(
                 accuracy_decimals=0,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional(CONF_XSHUT_PIN): pins.gpio_output_pin_schema,
         }
     )
     .extend(cv.polling_component_schema("60s"))
@@ -75,9 +72,5 @@ async def to_code(config):
     if CONF_RANGE_STATUS in config:
         sens = await sensor.new_sensor(config[CONF_RANGE_STATUS])    
         cg.add(var.set_range_status_sensor(sens))
-
-    if CONF_XSHUT_PIN in config:
-        pin = await cg.gpio_pin_expression(config[CONF_XSHUT_PIN])
-        cg.add(var.set_xshut_pin(pin))
 
     cg.add(var.config_distance_mode(config[CONF_DISTANCE_MODE]))
