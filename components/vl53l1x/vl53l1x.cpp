@@ -341,11 +341,13 @@ void VL53L1XComponent::loop() {
     return;
 
   if (!this->check_for_dataready(&is_dataready)) {
+    ESP_LOGD(TAG, "  Checking for data ready failed");
     this->ranging_active_ = false;
     return;
   }
 
   if (!is_dataready) {
+    ESP_LOGD(TAG, "  Data ready not ready when it should be!");
     this->ranging_active_ = false;
     return;
   }
@@ -357,6 +359,7 @@ void VL53L1XComponent::loop() {
     return;
   }
 
+  ESP_LOGD(TAG, "Publishing Distance: %imm with Ranging status: %i",this->distance_,this->range_status_);
   if (this->distance_sensor_ != nullptr)
      this->distance_sensor_->publish_state(this->distance_);
   if (this->range_status_sensor_ != nullptr)
@@ -367,11 +370,12 @@ void VL53L1XComponent::loop() {
 
 void VL53L1XComponent::update() {
   if (this->ranging_active_) {
+    ESP_LOGD(TAG, " Update triggered while ranging active"); // should never happen
     return;
   }
 
   if (!this->start_oneshot()) {
-    ESP_LOGE(TAG, "Start ranging failed in update");
+    ESP_LOGE(TAG, " Start ranging failed in update");
     this->error_code_ = START_RANGING_FAILED;
     this->mark_failed();
     return;
@@ -389,26 +393,15 @@ bool VL53L1XComponent::boot_state(uint8_t* state) {
 }
 
 bool VL53L1XComponent::get_sensor_id(bool* valid_sensor) {
-  // Add a small delay before reading sensor ID
-  delayMicroseconds(1000);
-  
   if (!this->vl53l1x_read_byte_16(IDENTIFICATION__MODEL_ID, &this->sensor_id_)) {
-    ESP_LOGE(TAG, "Failed to read sensor ID from register 0x010F");
     *valid_sensor = false;
     return false;
   }
-  
-  ESP_LOGI(TAG, "Read sensor ID: 0x%04X", this->sensor_id_);
-  
   // 0xEACC = VL53L1X, 0xEBAA = VL53L4CD
   *valid_sensor = ((this->sensor_id_ == 0xEACC) || (this->sensor_id_ == 0xEBAA));
-  
-  if (!*valid_sensor) {
-    ESP_LOGE(TAG, "Sensor ID 0x%04X does not match expected VL53L1X (0xEACC) or VL53L4CD (0xEBAA)", this->sensor_id_);
-  }
-  
   return true;
 }
+
 
 bool VL53L1XComponent::set_distance_mode(DistanceMode distance_mode) {
   uint16_t timing_budget;
