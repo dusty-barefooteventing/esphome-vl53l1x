@@ -30,9 +30,9 @@ CONF_DISTANCE_MODE = "distance_mode"
 CONF_RANGE_STATUS = "range_status"
 
 def validate_update_interval(config):
-    if config[CONF_UPDATE_INTERVAL].total_milliseconds < 1000:
+    if config[CONF_UPDATE_INTERVAL].total_milliseconds < 250:
         raise cv.Invalid(
-            f"VL53L1X update_interval must be 1 second or greater. Increase update_interval to >= 1 second"
+            f"VL53L1X update_interval must be 1 second or greater. Increase update_interval to >= 0.25 second"
         )
     return config
 
