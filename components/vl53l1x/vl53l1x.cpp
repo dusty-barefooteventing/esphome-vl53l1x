@@ -399,6 +399,7 @@ bool VL53L1XComponent::get_sensor_id(bool* valid_sensor) {
     return false;
   }
   // 0xEACC = VL53L1X, 0xEBAA = VL53L4CD
+  ESP_LOGE(TAG, "Reported sensor id: 0x%04X", this->sensor_id_);
   *valid_sensor = ((this->sensor_id_ == 0xEACC) || (this->sensor_id_ == 0xEBAA));
   return true;
 }
