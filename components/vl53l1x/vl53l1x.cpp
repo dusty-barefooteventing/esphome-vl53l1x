@@ -273,6 +273,7 @@ void VL53L1XComponent::dump_config() {
 
   switch (this->error_code_) {
     case WRONG_CHIP_ID:
+      ESP_LOGE(TAG, "Reported sensor id: 0x%04X", this->sensor_id_);
       ESP_LOGE(TAG, " Sensor id does not match VL53L1X or VL53L4CD OR communication failure reading sensor id");
       break;
 
